@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { Todo } from "./Main.vue";
+import { useRouter } from "vue-router";
+import { Todo } from "../pages/index.vue";
 
 interface Props {
   todos: Todo[];
@@ -7,12 +8,17 @@ interface Props {
 
 const { todos } = defineProps<Props>();
 const emit = defineEmits(["change", "delete"]);
+const router = useRouter();
 
 const onClickTodo = (index: number) => {
   emit("change", index);
 };
 const onDeleteTodo = (index: number) => {
   emit("delete", index);
+};
+
+const handleTodoInfo = (id: string) => {
+  router.push(`/todos/${id}`);
 };
 </script>
 
@@ -28,9 +34,19 @@ const onDeleteTodo = (index: number) => {
       <v-card-text class="card-text" :class="{ todo: todo.complated }">
         <div class="card-container">
           <span>{{ todo.subject }}</span>
-          <v-btn variant="flat" @click.stop="onDeleteTodo(index)" color="primary" type="submit"
-            >Delete</v-btn
-          >
+          <div class="btn-container">
+            <v-btn
+              variant="elevated"
+              @click.stop="handleTodoInfo(todo.id)"
+              color="orange"
+              type="submit"
+            >
+              info
+            </v-btn>
+            <v-btn variant="flat" @click.stop="onDeleteTodo(index)" color="primary" type="submit">
+              Delete
+            </v-btn>
+          </div>
         </div>
       </v-card-text>
     </v-card>
@@ -51,5 +67,8 @@ const onDeleteTodo = (index: number) => {
   display: flex;
   justify-content: space-between;
   align-items: center;
+}
+.btn-container button {
+  margin-left: 0.5rem;
 }
 </style>

@@ -1,8 +1,8 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from "vue";
+import { ref, computed, onMounted, watch } from "vue";
 import { useId } from "radix-vue";
 import axios from "axios";
-import TodoList from "./TodoList.vue";
+import TodoList from "../components/TodoList.vue";
 
 export interface Todo {
   id: string;
@@ -13,17 +13,29 @@ export interface Todo {
 const todo = ref("");
 const todos = ref<Todo[]>([]);
 const searchText = ref("");
+const totalTodos = ref(0);
+const currentPage = ref(1);
+const limit = 5;
+let timeoutId: number;
 
-const filteredTodo = computed(() => {
-  if (searchText.value) {
-    return todos.value.filter((todo) => todo.subject.includes(searchText.value));
-  }
-  return todos.value;
+const numberOfPages = computed(() => {
+  return Math.ceil(totalTodos.value / limit);
 });
 
-const getTodos = async () => {
+watch(searchText, () => {
+  window.clearTimeout(timeoutId);
+  timeoutId = setTimeout(() => {
+    currentPage.value = 1;
+    getTodos(1);
+  }, 1000);
+});
+
+const getTodos = async (page: number = currentPage.value) => {
   try {
-    const res = await axios<Todo[]>("http://localhost:3000/todos");
+    const res = await axios<Todo[]>(
+      `http://localhost:3000/todos?_sort=id&_order=desc&subject_like=${searchText.value}&_page=${page}&_limit=${limit}`
+    );
+    totalTodos.value = res.headers["x-total-count"];
     todos.value = res.data;
   } catch (error) {
     console.log(error);
@@ -39,8 +51,8 @@ const handleSubmit = async () => {
     complated: false,
   };
   try {
-    const res = await axios.post("http://localhost:3000/todos", data);
-    todos.value.push(res.data);
+    await axios.post("http://localhost:3000/todos", data);
+    getTodos(1);
   } catch (error) {
     console.log(error);
   }
@@ -63,7 +75,13 @@ const handleDelete = (index: number) => {
   const id = todos.value[index].id;
   axios.delete(`http://localhost:3000/todos/${id}`).then(() => {
     todos.value.splice(index, 1);
+    getTodos(1);
   });
+};
+
+const handleKeyupEnter = () => {
+  window.clearTimeout(timeoutId);
+  getTodos(1);
 };
 
 onMounted(() => {
@@ -72,14 +90,20 @@ onMounted(() => {
 </script>
 
 <template>
-  <h2>vue3 composition API</h2>
-  <v-text-field label="Search" variant="underlined" v-model="searchText"> </v-text-field>
+  <v-text-field
+    label="Search"
+    variant="underlined"
+    v-model="searchText"
+    @keyup.enter="handleKeyupEnter"
+  >
+  </v-text-field>
   <form @submit.prevent="handleSubmit" class="form">
     <v-text-field label="new todo" variant="underlined" required v-model="todo"> </v-text-field>
     <v-btn variant="tonal" color="primary" type="submit">Add</v-btn>
   </form>
-  <v-card v-if="!todos.length" text="this field cannot be empty" color="black"></v-card>
-  <TodoList :todos="filteredTodo" @change="handleClickTodo" @delete="handleDelete" />
+  <!-- <v-card v-if="!todos.length" text="this field cannot be empty" color="black"></v-card> -->
+  <TodoList :todos="todos" @change="handleClickTodo" @delete="handleDelete" />
+  <v-pagination :length="numberOfPages" v-model="currentPage" @click="getTodos"></v-pagination>
 </template>
 
 <style lang="css" scoped>
