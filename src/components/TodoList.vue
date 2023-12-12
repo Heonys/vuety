@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { useRouter } from "vue-router";
-import { Todo } from "../pages/index.vue";
+import { Todo } from "../pages/todos/index.vue";
+import Modal from "../components/ModalContainer.vue";
 
 interface Props {
   todos: Todo[];
@@ -23,34 +24,38 @@ const handleTodoInfo = (id: string) => {
 </script>
 
 <template>
-  <v-container>
-    <v-card
-      class="mt-4"
-      v-for="(todo, index) in todos"
-      :key="todo.id"
-      @click="onClickTodo(index)"
-      :color="todo.complated ? 'green' : 'white'"
-    >
-      <v-card-text class="card-text" :class="{ todo: todo.complated }">
-        <div class="card-container">
-          <span>{{ todo.subject }}</span>
-          <div class="btn-container">
-            <v-btn
-              variant="elevated"
-              @click.stop="handleTodoInfo(todo.id)"
-              color="orange"
-              type="submit"
-            >
-              info
-            </v-btn>
-            <v-btn variant="flat" @click.stop="onDeleteTodo(index)" color="primary" type="submit">
-              Delete
-            </v-btn>
-          </div>
-        </div>
-      </v-card-text>
-    </v-card>
-  </v-container>
+  <Modal :onDeleteTodo="onDeleteTodo">
+    <template #body="{ openDialog }">
+      <v-container>
+        <v-card
+          class="mt-4"
+          v-for="(todo, index) in todos"
+          :key="todo.id"
+          @click="onClickTodo(index)"
+          :color="todo.complated ? 'green' : 'white'"
+        >
+          <v-card-text class="card-text" :class="{ todo: todo.complated }">
+            <div class="card-container">
+              <span>{{ todo.subject }}</span>
+              <div class="btn-container">
+                <v-btn
+                  variant="elevated"
+                  @click.stop="handleTodoInfo(todo.id)"
+                  color="orange"
+                  type="submit"
+                >
+                  info
+                </v-btn>
+                <v-btn variant="flat" @click.stop="openDialog(index)" color="primary" type="submit">
+                  Delete
+                </v-btn>
+              </div>
+            </div>
+          </v-card-text>
+        </v-card>
+      </v-container>
+    </template>
+  </Modal>
 </template>
 
 <style lang="css" scoped>

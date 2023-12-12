@@ -15,7 +15,8 @@
     "radix-vue": "^1.2.4",
     "vue": "^3.3.8",
     "vue-router": "^4.2.5",
-    "vuetify": "^3.4.6"
+    "vuetify": "^3.4.6",
+    "vuex": "^4.0.2"
   },
   "devDependencies": {
     "@types/lodash": "^4.14.202",

@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import axios from "axios";
+import customAxios from "../../../service/customAxios";
 import { useRoute, useRouter } from "vue-router";
 import { ref, onMounted, computed } from "vue";
-import { Todo } from "../../index.vue";
+import { Todo } from "../index.vue";
 import _ from "lodash";
+import { useToast } from "../../../hooks/toast";
 
+const { trigerToast } = useToast();
 const route = useRoute();
 const router = useRouter();
 const loading = ref(true);
@@ -13,10 +15,14 @@ const todo = ref<Todo>();
 const todoId = route.params.id;
 
 const getTodo = async () => {
-  const res = await axios<Todo>(`http://localhost:3000/todos/${todoId}`);
-  todo.value = { ...res.data };
-  originTodo.value = { ...res.data };
-  loading.value = false;
+  try {
+    const res = await customAxios<Todo>(`todos/${todoId}`);
+    todo.value = { ...res.data };
+    originTodo.value = { ...res.data };
+    loading.value = false;
+  } catch (error) {
+    trigerToast("Something went wrong", "error");
+  }
 };
 
 const handleToggleStatus = () => {
@@ -25,17 +31,23 @@ const handleToggleStatus = () => {
 };
 
 const handleClickGoback = () => {
-  router.push({ name: "Home" });
+  router.push({ name: "Todos" });
 };
 
 const handleSubmit = () => {
   if (!todo.value) return;
-  axios
-    .put(`http://localhost:3000/todos/${todoId}`, {
+  customAxios
+    .put(`todos/${todoId}`, {
       subject: todo.value.subject,
       complated: todo.value.complated,
     })
-    .then((res) => (originTodo.value = { ...res.data }));
+    .then((res) => {
+      originTodo.value = { ...res.data };
+      trigerToast("Successfully saved", "success");
+    })
+    .catch(() => {
+      trigerToast("something went wrong", "error");
+    });
 };
 
 const compareTodo = computed(() => {
@@ -48,7 +60,7 @@ onMounted(() => {
 </script>
 
 <template>
-  <v-container>
+  <v-container class="container">
     <div v-if="loading">loading...</div>
     <v-form v-else fast-fail @submit.prevent="handleSubmit">
       <v-row>
@@ -71,4 +83,28 @@ onMounted(() => {
   </v-container>
 </template>
 
-<style lang="scss" scoped></style>
+<style lang="css" scoped>
+.fade-enter-active,
+.fade-leave-active {
+  transition: all 0.3s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  opacity: 0;
+}
+
+.fade-enter-to,
+.fade-leave-from {
+  opacity: 1;
+}
+
+.toast {
+  position: absolute;
+  width: 50%;
+  bottom: 0;
+  left: 50%;
+  transform: translateX(-50%);
+}
+</style>
+../../../service/customAxios
